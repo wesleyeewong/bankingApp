@@ -41,6 +41,7 @@ def download(file_name):
 
 def upload(file_name):
 
+	# sock.sendall('POST'.encode())
 	sock.sendall(file_name.encode())
 
 	statinfo = os.stat(file_name)

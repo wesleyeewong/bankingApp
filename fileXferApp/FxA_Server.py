@@ -3,6 +3,7 @@ import sys
 import argparse
 import hashlib
 import os
+import threading
 
 address = 'localhost'
 download_path = 'server_download/'
@@ -29,37 +30,60 @@ server_address = (address, int(server_port_number))
 sock.bind(server_address)
 sock.listen(2)
 
-done = False
+serverDown = False
 
-while not done:
+# User input functions, will run this on a different thread while the server is receiving connection and such
+def user_input():
+	global serverDown
+	while not serverDown:
+		user_input = input('')
+		user_input = user_input.split(' ')
+		if user_input[0] == 'terminate':
+			exit()
+		elif user_input[0] == 'w':
+			window_size(user_input[1])
+		else:
+			print ('Invalid command, valid commands are [terminate, w (number)]')
+
+def exit():
+	print ('Prepare for server shut down')
+	global serverDown
+	serverDown = True 
+
+def window_size(w):
+	print ('Window size is now %s' % w)
+# END user input functions
+
+# starting thread for user_input function
+threading.Thread(target=user_input).start()
+
+while not serverDown:
+
+	if serverDown:
+		print ('serverDown boolean is True')
+	print ('Server started')
 	print ('waiting for connection')
 	connection, client_address = sock.accept()
 
-	file_name = connection.recv(1024).decode()
-	size = int(connection.recv(1024).decode())
-	f = open(download_path+file_name, 'wb')
-	print ('file opened')
-	for x in range(0,size):
-		data = connection.recv(1024)
-		f.write(data)
-		print ('Binaries received')
+	done = False
 
-	f.close()
-	print('File received')
+	while not done:
 
+		try:
+			file_name = connection.recv(1024).decode()
+			size = int(connection.recv(1024).decode())
+			f = open(download_path+file_name, 'wb')
+			print ('file opened')
+			for x in range(0,size):
+				data = connection.recv(1024)
+				f.write(data)
+				print ('Binaries received')
 
-	# while connection:
-	# 	# receiving initial file
-	# 	data = connection.recv(1024)
-	# 	print ('receiving file binaries')
-	# 	# transferDone = False
-	# 	# while not transferDone:
-	# 	# 	f.write(data)
-	# 	# 	print ('file written')
-	# 	# 	data = connection.recv(1024)
-	# 	# 	if data.decode() == 'EOF':
-	# 	# 		transferDone = True
-	# 	f.write(data)
-	# 	f.close()
-	# 	print ('File received')
-	# 	file_num += 1
+			f.close()
+			print('File received')
+		except socket.error:
+			print ('No data to receive yet')
+
+		finally:
+			done = True
+			# connection.close()
