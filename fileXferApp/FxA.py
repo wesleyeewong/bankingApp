@@ -4,6 +4,8 @@ import argparse
 import hashlib
 import os
 
+download_path = 'client_download/'
+
 # python built in argparser for cmd arg inputs 
 parser = argparse.ArgumentParser(description="File transver app")
 parser.add_argument('-d', action='store_true', required=False, dest='debug', help='debugging option')
@@ -37,15 +39,34 @@ def disconnect():
 	sock.close()
 
 def download(file_name):
-	pass
+	sock.sendall('GET'.encode())
+	sock.sendall(file_name.encode())
+
+	if sock.recv(1024).decode() == 'FILE_DNE':
+		print ('No such file exists')
+	else:
+		size = int(sock.recv(1024).decode())
+		f = open(download_path+file_name, 'wb')
+		print ('file opened')
+
+		for x in range (0, size):
+			data = sock.recv(1024)
+			f.write(data)
+			print ('Binaries received')
+
+		f.close()
+		print('File received')
+
+
 
 def upload(file_name):
 
-	# sock.sendall('POST'.encode())
+	sock.sendall('POST'.encode())
 	sock.sendall(file_name.encode())
 
 	statinfo = os.stat(file_name)
 	byte_size = statinfo.st_size
+	print (byte_size)
 	sock.sendall(str(int((byte_size/1024)+1)).encode())
 
 	print ('Opening file')
@@ -80,7 +101,16 @@ while not done:
 		if len(user_input) == 1:
 			print ('No file entered')
 		else: 
-			upload(user_input[1])
+			if os.path.exists(user_input[1]):
+				upload(user_input[1])
+			else:
+				print ('No such file exists!!')
+
+	elif user_input[0] == 'get':
+		if len(user_input) == 1:
+			print ('No file entered')
+		else:
+			download(user_input[1])
 
 	else:
 		print ('Invalid input please try again. Valid inputs are [connect, get, post, window, disconnect]')

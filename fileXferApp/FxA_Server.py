@@ -54,36 +54,102 @@ def window_size(w):
 	print ('Window size is now %s' % w)
 # END user input functions
 
+def download(connection):
+	# receiving file name
+	file_name = connection.recv(1024).decode()
+	print ('file name: %s' % file_name)
+	size = int(connection.recv(1024).decode())
+	f = open(download_path+file_name, 'wb')
+	print ('file opened')
+
+	for x in range (0, size):
+		data = connection.recv(1024)
+		f.write(data)
+		print ('Binaries received')
+
+	f.close()
+	print('File received')
+
+def upload(connection):
+	# receiving file name
+	file_name = connection.recv(1024).decode()
+
+	# getting size of the file 
+	if os.path.exists(download_path+file_name):
+		connection.sendall('FILE_EXISTS'.encode())
+		statinfo = os.stat(download_path+file_name)
+		byte_size = statinfo.st_size
+		connection.sendall(str(int((byte_size/1024)+1)).encode())
+		print ('Opening file')
+		f = open(file_name, 'rb')
+		print ('Reading file binaries')
+		binary = f.read(1024)
+		while binary:
+			print ('Uploading file')
+			connection.sendall(binary)
+			binary = f.read(1024)
+		print ('Upload complete')
+	else:
+		connection.sendall('FILE_DNE'.encode())
+
+
+def server():
+	print ('Server starte')
+	global serverDown
+	connection = None
+	while not serverDown:
+		print ('Waiting for connection')
+		if not isinstance(connection, socket.socket):
+			connection, client_address = sock.accept()
+			print ('Connection accepted')
+		else:
+			done = serverDown
+			while not done:
+				try: 
+					instruction = connection.recv(1024).decode()
+					print ('Instructions: %s' % instruction)
+					if instruction == 'POST':
+						download(connection)
+					elif instruction == 'GET':
+						upload(connection)
+					print ('File received')
+				finally:
+					print ('In finally')
+					done = True
+
+
 # starting thread for user_input function
 threading.Thread(target=user_input).start()
+server()
 
-while not serverDown:
 
-	if serverDown:
-		print ('serverDown boolean is True')
-	print ('Server started')
-	print ('waiting for connection')
-	connection, client_address = sock.accept()
+# while not serverDown:
 
-	done = False
+# 	if serverDown:
+# 		print ('serverDown boolean is True')
+# 	print ('Server started')
+# 	print ('waiting for connection')
+# 	connection, client_address = sock.accept()
+# 	print (type(connection))
+# 	done = False
 
-	while not done:
+# 	while not done:
 
-		try:
-			file_name = connection.recv(1024).decode()
-			size = int(connection.recv(1024).decode())
-			f = open(download_path+file_name, 'wb')
-			print ('file opened')
-			for x in range(0,size):
-				data = connection.recv(1024)
-				f.write(data)
-				print ('Binaries received')
+# 		try:
+# 			file_name = connection.recv(1024).decode()
+# 			size = int(connection.recv(1024).decode())
+# 			f = open(download_path+file_name, 'wb')
+# 			print ('file opened')
+# 			for x in range(0,size):
+# 				data = connection.recv(1024)
+# 				f.write(data)
+# 				print ('Binaries received')
 
-			f.close()
-			print('File received')
-		except socket.error:
-			print ('No data to receive yet')
+# 			f.close()
+# 			print('File received')
+# 		except socket.error:
+# 			print ('No data to receive yet')
 
-		finally:
-			done = True
-			# connection.close()
+# 		finally:
+# 			done = True
+# 			# connection.close()
