@@ -36,7 +36,12 @@ def connect():
 
 # disconnecting the server
 def disconnect():
-	sock.close()
+	sock.sendall('CLOSE'.encode())
+	if sock.recv(1024).decode() == 'G2C':
+		print ('Connection to server closing')
+		sock.close()
+	else:
+		print ('ERROR: unable to close')
 
 def download(file_name):
 	sock.sendall('GET'.encode())

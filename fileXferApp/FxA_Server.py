@@ -92,9 +92,15 @@ def upload(connection):
 	else:
 		connection.sendall('FILE_DNE'.encode())
 
+def client_closing(connection):
+	connection.sendall('G2C'.encode())
+	connection.close()
+	connection = None
+	return connection
+
 
 def server():
-	print ('Server starte')
+	print ('Server started')
 	global serverDown
 	connection = None
 	while not serverDown:
@@ -107,12 +113,16 @@ def server():
 			while not done:
 				try: 
 					instruction = connection.recv(1024).decode()
-					print ('Instructions: %s' % instruction)
+					print ('Instructions: |%s|' % instruction)
 					if instruction == 'POST':
 						download(connection)
+						print ('File received')
 					elif instruction == 'GET':
 						upload(connection)
-					print ('File received')
+						print ('File sent')
+					elif instruction == 'CLOSE':
+						connection = client_closing(connection)
+						print ('Connection closed')
 				finally:
 					print ('In finally')
 					done = True
@@ -121,35 +131,3 @@ def server():
 # starting thread for user_input function
 threading.Thread(target=user_input).start()
 server()
-
-
-# while not serverDown:
-
-# 	if serverDown:
-# 		print ('serverDown boolean is True')
-# 	print ('Server started')
-# 	print ('waiting for connection')
-# 	connection, client_address = sock.accept()
-# 	print (type(connection))
-# 	done = False
-
-# 	while not done:
-
-# 		try:
-# 			file_name = connection.recv(1024).decode()
-# 			size = int(connection.recv(1024).decode())
-# 			f = open(download_path+file_name, 'wb')
-# 			print ('file opened')
-# 			for x in range(0,size):
-# 				data = connection.recv(1024)
-# 				f.write(data)
-# 				print ('Binaries received')
-
-# 			f.close()
-# 			print('File received')
-# 		except socket.error:
-# 			print ('No data to receive yet')
-
-# 		finally:
-# 			done = True
-# 			# connection.close()
