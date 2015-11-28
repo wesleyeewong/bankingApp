@@ -5,6 +5,8 @@ import hashlib
 import os
 import threading
 
+from rxp import RxpSocket
+
 address = 'localhost'
 download_path = 'server_download/'
 file_num = 0
@@ -23,7 +25,7 @@ netemu_port = args.netemu_port
 # end arg parser
 
 # creating TCP socket
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock = RxpSocket() #socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_address = (address, int(server_port_number))
 
 # binding server to specific port, then listens
@@ -87,6 +89,7 @@ def upload(connection):
 		while binary:
 			print ('Uploading file')
 			connection.sendall(binary)
+			print('Reading from file')
 			binary = f.read(1024)
 		print ('Upload complete')
 	else:
@@ -104,8 +107,8 @@ def server():
 	global serverDown
 	connection = None
 	while not serverDown:
-		print ('Waiting for connection')
-		if not isinstance(connection, socket.socket):
+		if not isinstance(connection, socket.socket) and not isinstance(connection, RxpSocket):
+			print ('Waiting for connection')
 			connection, client_address = sock.accept()
 			print ('Connection accepted')
 		else:

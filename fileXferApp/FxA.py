@@ -4,6 +4,8 @@ import argparse
 import hashlib
 import os
 
+from rxp import RxpSocket
+
 download_path = 'client_download/'
 
 # python built in argparser for cmd arg inputs 
@@ -18,19 +20,25 @@ debug = args.debug
 client_port_number = args.client_port_number
 netemu_address = args.netemu_address
 netemu_port = args.netemu_port
+
+
 # end arg parser
 
 if debug: 
 	print ('Client port: %s, NetEmu address: %s, NetEmu port: %s' % (client_port_number, netemu_address, netemu_port))
 
 # creating TCP socket, and instantiating server_address to connect to 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock = RxpSocket() #socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+recv_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server_address = (netemu_address, int(netemu_port))
+#recv_sock.bind(client_port_number)
+
 
 # connecting to server
 def connect():
 	if debug:
 		print ('Connecting to %s port %s' % server_address)
+		print(sock._sock)
 
 	sock.connect(server_address)
 
@@ -50,7 +58,8 @@ def download(file_name):
 	if sock.recv(1024).decode() == 'FILE_DNE':
 		print ('No such file exists')
 	else:
-		size = int(sock.recv(1024).decode())
+		size = int(sock.recv(1024))
+		print(size)
 		f = open(download_path+file_name, 'wb')
 		print ('file opened')
 
